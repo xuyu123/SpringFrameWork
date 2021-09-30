@@ -250,17 +250,22 @@ public class AnnotatedBeanDefinitionReader {
 			@Nullable Class<? extends Annotation>[] qualifiers, @Nullable Supplier<T> supplier,
 			@Nullable BeanDefinitionCustomizer[] customizers) {
 
+		//创建BeanDefinition
 		AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
+		//判断要不要跳过解析，加了@Conditional的跳过解析
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
 
 		abd.setInstanceSupplier(supplier);
+		//获取@scope定义
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
 		abd.setScope(scopeMetadata.getScopeName());
+		//beanName,默认类名首字母转小写
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
-
+		//处理类上的通用注解@Lazy,@DependsOn,@Primary,@Role,@Description
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
+		//把方法接收的限定注解加到BeanDefinition，这部分逻辑应该会在spring内部用到
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
 				if (Primary.class == qualifier) {
@@ -274,14 +279,29 @@ public class AnnotatedBeanDefinitionReader {
 				}
 			}
 		}
+		//自定义注解，很少用
 		if (customizers != null) {
 			for (BeanDefinitionCustomizer customizer : customizers) {
 				customizer.customize(abd);
 			}
 		}
 
+		//持有bean
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+		/*
+		ScopedProxyMode 代理模型
+		TODO 涉及到是否生成代理对象，是代理接口还是代理类，也会用到FactoryBean
+		 */
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+		/*
+		使用DefaultListableBeanFactory注册BeanDefinition，也注册bean别名
+		DefaultListableBeanFactory
+			把beanName-beanDefinition放到beanDefinitionMap
+			把beanName放到beanDefinitionNames列表
+
+			重重重点：在准备，已经存在6个类，很关键（5.0.x），spring的5个 + AnnotationConfig
+			问题：我这里只有5个，少了org.springframework.context.annotation.internalRequiredAnnotationProcessor，(5.2.x这个类已经不存在)
+		 */
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 	}
 

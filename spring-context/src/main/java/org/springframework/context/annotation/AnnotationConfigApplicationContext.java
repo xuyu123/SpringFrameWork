@@ -63,7 +63,22 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
+		//先调父类的构造方法
+
+
+		/*
+		创建一个读取器，读取被加了注解的Bean，通过内部的BeanDefinitionRegistry注册成BeanDefinition
+		并且在这里注册后面提到的5个重要的spring内部的BeanDefinition
+
+		bean的4种来源：
+			@Component，xml，@bean，spring内部的
+
+		 */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+
+		/*
+
+		 */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
@@ -84,8 +99,11 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
+		//构造方法
 		this();
+		//注册配置类
 		register(componentClasses);
+		//初始化spring的环境
 		refresh();
 	}
 
@@ -148,6 +166,9 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	//---------------------------------------------------------------------
 
 	/**
+	 * 注册一个或多个Bean，bean可能是配置bean
+	 * 请注意，必须调用refresh()以使上下文完全处理新类
+	 *
 	 * Register one or more component classes to be processed.
 	 * <p>Note that {@link #refresh()} must be called in order for the context
 	 * to fully process the new classes.

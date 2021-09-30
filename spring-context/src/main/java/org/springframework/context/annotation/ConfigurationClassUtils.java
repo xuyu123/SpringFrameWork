@@ -90,6 +90,7 @@ abstract class ConfigurationClassUtils {
 			return false;
 		}
 
+		//1.拿元数据（类的信息），bd是不是加注解的，拿元数据的方式不同
 		AnnotationMetadata metadata;
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
@@ -121,11 +122,16 @@ abstract class ConfigurationClassUtils {
 				return false;
 			}
 		}
-
+		//2.判断是不是加了Configuration注解，设置标志
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		//否则判断是不是这些注解
+		//		candidateIndicators.add(Component.class.getName());
+		//		candidateIndicators.add(ComponentScan.class.getName());
+		//		candidateIndicators.add(Import.class.getName());
+		//		candidateIndicators.add(ImportResource.class.getName());
 		else if (config != null || isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
