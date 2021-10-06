@@ -504,6 +504,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		try {
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
 			// InstantiationAwareBeanPostProcessor
+			//第一次调用bean后置处理器
 			//遍历调用所有的InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation，可以直接返回一个bean，不用再走后面的流程
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
@@ -557,7 +558,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
 		}
 		if (instanceWrapper == null) {
-			//反射new对象
+			//反射new对象,实例化bean
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
 		//拿到原生对象
@@ -571,6 +572,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		synchronized (mbd.postProcessingLock) {
 			if (!mbd.postProcessed) {
 				try {
+					//第三次调用bean后置处理器
 					//执行所有MergedBeanDefinitionPostProcessor#postProcessMergedBeanDefinition
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
@@ -592,6 +594,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
+			//getEarlyBeanReference 第四次调用bean后置处理器
+			//SmartInstantiationAwareBeanPostProcessor#getEarlyBeanReference
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
@@ -1223,6 +1227,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// Candidate constructors for autowiring?
+		//第二次调用bean后置处理器
 		//通过BeanPostProcessors决定构造方法
 		// 执行BeanPostProcesso#determineCandidateConstructors 自己去决定使用哪个构造器，可能会返回一批构造器哟
 		// 这里我们很熟悉的`AutowiredAnnotationBeanPostProcessor`就实现了这个方法，可以智能去找出一个合适的构造器.
@@ -1412,6 +1417,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
 		// state of the bean before properties are set. This can be used, for example,
 		// to support styles of field injection.
+		//第五次调用bean后置处理器
 		//在设置属性之前，提供修改bean状态的机会。例如，这可以用于支持字段注入的样式。并且如果返回false，会跳过后面的属性填充
 		if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			for (BeanPostProcessor bp : getBeanPostProcessors()) {
@@ -1446,6 +1452,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
 		boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
 
+		//第六次调用bean后置处理器
 		//遍历调用InstantiationAwareBeanPostProcessor#postProcessProperties
 		//CommonAnnotationBeanPostProcessor:处理@Resource
 		//AutowiredAnnotationBeanPostProcessor:处理@Autowired
@@ -1824,6 +1831,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Object wrappedBean = bean;
 		if (mbd == null || !mbd.isSynthetic()) {
+			//第七次调用bean后置处理器
 			//执行bean后置处理器的postProcessBeforeInitialization方法
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
@@ -1838,6 +1846,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					beanName, "Invocation of init method failed", ex);
 		}
 		if (mbd == null || !mbd.isSynthetic()) {
+			//第八次调用bean后置处理器
 			////执行bean后置处理器的postProcessAfterInitialization方法
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
